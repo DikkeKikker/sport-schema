@@ -399,7 +399,12 @@
 <div class="header">
   <div class="header-top">
     <span class="app-title">Training</span>
-    <span class="week-label" id="week-label">—</span>
+    <<span class="week-label">
+		<button onclick="changeWeek(-1)">‹</button>
+		<span id="week-label"></span>
+		<button onclick="changeWeek(1)">›</button>
+		<button onclick="goToToday()">Vandaag</button>
+	</span>
   </div>
   <div class="day-tabs" id="day-tabs"></div>
 </div>
@@ -412,103 +417,71 @@
 </div>
 
 <script>
-const sessions = [
-  {
-    id: "ma", label: "Ma", type: "push", typeName: "Push",
-    name: "Push", time: "~40 min",
-    tip: "Borst, schouders, triceps. Zwaar genoeg dat de laatste 2 reps uitdagend zijn.",
-    exercises: [
-      { id: "chest_press", name: "Dumbbell chest press", sets: 4, reps: "10–12" },
-      { id: "ohp", name: "Overhead press", sets: 3, reps: "10" },
-      { id: "incline", name: "Incline dumbbell press", sets: 3, reps: "12" },
-      { id: "lateral", name: "Lateral raises", sets: 3, reps: "15" },
-      { id: "tricep", name: "Triceps kickbacks / overhead", sets: 3, reps: "12" },
-    ]
-  },
-  {
-    id: "di", label: "Di", type: "pull", typeName: "Pull",
-    name: "Pull", time: "~40 min",
-    tip: "Rug, biceps, achterste schouder. Focus op mind-muscle connection in de rug.",
-    exercises: [
-      { id: "bent_row", name: "Bent-over row", sets: 4, reps: "10" },
-      { id: "single_row", name: "Single-arm row", sets: 3, reps: "12 p.z." },
-      { id: "band_pull", name: "Band pull-apart", sets: 3, reps: "15", noweight: true },
-      { id: "curl", name: "Dumbbell curl", sets: 3, reps: "12" },
-      { id: "hammer", name: "Hammer curl", sets: 3, reps: "12" },
-    ]
-  },
-  {
-    id: "wo", label: "Wo", type: "rust", typeName: "Rust",
-    name: "Rust", time: "—",
-    tip: "Volledige rustdag. Goed eten en slapen voor herstel.",
-    exercises: []
-  },
-  {
-    id: "do", label: "Do", type: "cardio", typeName: "Cardio + core",
-    name: "Cardio + core", time: "~35 min",
-    tip: "Actieve rustdag tussen de krachtsessies. Licht zweten, niet uitputten.",
-    exercises: [
-      { id: "vr_box", name: "VR cardio boksen", sets: 1, reps: "20 min", noweight: true },
-      { id: "plank", name: "Plank (variaties)", sets: 3, reps: "45 sec", noweight: true },
-      { id: "deadbug", name: "Dead bug", sets: 3, reps: "10 p.z.", noweight: true },
-      { id: "woodchop", name: "Band woodchop", sets: 3, reps: "12 p.z." },
-    ]
-  },
-  {
-    id: "vr", label: "Vr", type: "benen", typeName: "Benen & billen",
-    name: "Benen & billen", time: "~45 min",
-    tip: "Zwaarste sessie. Goblet squat en RDL zijn je kernoefeningen — bouw gewicht op.",
-    exercises: [
-      { id: "goblet", name: "Goblet squat", sets: 4, reps: "12" },
-      { id: "rdl", name: "Romanian deadlift", sets: 4, reps: "10" },
-      { id: "lunge", name: "Dumbbell lunges", sets: 3, reps: "12 p.z." },
-      { id: "bridge", name: "Glute bridge / hip thrust", sets: 3, reps: "15", noweight: true },
-      { id: "crab", name: "Band crab walk", sets: 3, reps: "15 p.z.", noweight: true },
-    ]
-  },
-  {
-    id: "za", label: "Za", type: "full", typeName: "Full body",
-    name: "Full body", time: "~45 min",
-    tip: "Gebruik zaterdag om bodypump te integreren. Compound moves voor maximale efficiency.",
-    exercises: [
-      { id: "thruster", name: "Dumbbell thruster", sets: 4, reps: "10" },
-      { id: "renegade", name: "Renegade row", sets: 3, reps: "8 p.z." },
-      { id: "sumo", name: "Sumo deadlift", sets: 3, reps: "12" },
-      { id: "arnold", name: "Arnold press", sets: 3, reps: "10" },
-      { id: "bodypump", name: "Bodypump circuit", sets: 1, reps: "10 min", noweight: true },
-    ]
-  },
-  {
-    id: "zo", label: "Zo", type: "rust", typeName: "Rust",
-    name: "Rust", time: "—",
-    tip: "Volledige rustdag. Eventueel een wandeling of lichte stretch.",
-    exercises: []
-  }
-];
-
+// ---------------------
+// STATE
+// ---------------------
 let active = 0;
-const storage = {};
+let currentDate = new Date();
 
-function sk(sid, eid, i) { return `w_${sid}_${eid}_${i}`; }
-function nk(sid, eid) { return `note_${sid}_${eid}`; }
+// ---------------------
+// WEEK HELPERS (ISO week - EU correct)
+// ---------------------
+function getWeekYear(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return { year: d.getUTCFullYear(), week };
+}
 
+// ---------------------
+// STORAGE KEYS
+// ---------------------
+function sk(sid, eid, i) {
+  const { year, week } = getWeekYear(currentDate);
+  return `w_${year}_${week}_${sid}_${eid}_${i}`;
+}
+
+function nk(sid, eid) {
+  const { year, week } = getWeekYear(currentDate);
+  return `note_${year}_${week}_${sid}_${eid}`;
+}
+
+// ---------------------
+// STORAGE
+// ---------------------
 function save(key, val) {
   try { localStorage.setItem(key, val); } catch(e) {}
-  storage[key] = val;
 }
 
 function load(key) {
-  try { return localStorage.getItem(key) || storage[key] || ""; }
-  catch(e) { return storage[key] || ""; }
+  try { return localStorage.getItem(key) || ""; }
+  catch(e) { return ""; }
 }
 
-function getWeekLabel() {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-  return `Week ${week}`;
+// ---------------------
+// WEEK NAVIGATION
+// ---------------------
+function updateWeekLabel() {
+  const { year, week } = getWeekYear(currentDate);
+  document.getElementById("week-label").textContent = `Week ${week} • ${year}`;
 }
 
+function changeWeek(offset) {
+  currentDate.setDate(currentDate.getDate() + offset * 7);
+  updateWeekLabel();
+  renderContent();
+}
+
+function goToToday() {
+  currentDate = new Date();
+  updateWeekLabel();
+  renderContent();
+}
+
+// ---------------------
+// RENDER
+// ---------------------
 function renderTabs() {
   const container = document.getElementById("day-tabs");
   container.innerHTML = sessions.map((s, i) => `
@@ -529,10 +502,7 @@ function renderContent() {
           <span class="session-badge badge-rust">${s.typeName}</span>
         </div>
       </div>
-      <div class="rest-card">
-        <div class="rest-icon">○</div>
-        <div>${s.tip}</div>
-      </div>
+      <div class="rest-card">${s.tip}</div>
     `;
     return;
   }
@@ -545,7 +515,6 @@ function renderContent() {
         <span class="session-time">${s.time}</span>
       </div>
     </div>
-    <div class="section-divider">Straight sets — alle sets per oefening</div>
   `;
 
   for (const ex of s.exercises) {
@@ -555,19 +524,26 @@ function renderContent() {
       <div class="ex-scheme">${ex.sets}×${ex.reps}</div>
     </div>`;
 
-    if (ex.noweight) {
-      html += `<div class="no-weight-note">— geen gewicht</div>`;
-    } else {
+    if (!ex.noweight) {
       html += `<div class="sets-row">`;
       for (let i = 0; i < ex.sets; i++) {
         const val = load(sk(s.id, ex.id, i));
+
+        // 👇 last week value (progress hint)
+        const prevDate = new Date(currentDate);
+        prevDate.setDate(prevDate.getDate() - 7);
+        const { year, week } = getWeekYear(prevDate);
+        const prevKey = `w_${year}_${week}_${s.id}_${ex.id}_${i}`;
+        const prevVal = localStorage.getItem(prevKey) || "";
+
         html += `
           <div class="set-block">
             <div class="set-num">Set ${i + 1}</div>
             <div class="set-input-wrap">
-              <input class="set-input" type="number" inputmode="decimal" min="0" step="0.5"
-                     placeholder="—" value="${val}"
-                     id="inp_${s.id}_${ex.id}_${i}" />
+              <input class="set-input" type="number"
+                     value="${val}"
+                     data-key="${sk(s.id, ex.id, i)}"
+                     placeholder="${prevVal || '—'}"/>
               <span class="set-unit">kg</span>
             </div>
           </div>`;
@@ -576,88 +552,65 @@ function renderContent() {
     }
 
     const noteVal = load(nk(s.id, ex.id));
-    html += `<div class="note-wrap">
-      <textarea class="note-input" rows="1" placeholder="Notitie..."
-                id="note_${s.id}_${ex.id}"
-                oninput="autoResize(this)">${noteVal}</textarea>
-    </div>`;
+    html += `
+      <textarea class="note-input"
+        data-key="${nk(s.id, ex.id)}"
+        placeholder="Notitie...">${noteVal}</textarea>
+    `;
+
     html += `</div>`;
   }
 
   html += `<div class="tip-card">${s.tip}</div>`;
   content.innerHTML = html;
 
-  // Auto-resize textareas
-  document.querySelectorAll('.note-input').forEach(autoResize);
+  // ---------------------
+  // AUTO SAVE
+  // ---------------------
+  document.querySelectorAll('[data-key]').forEach(el => {
+    el.addEventListener('input', e => {
+      save(e.target.dataset.key, e.target.value);
+    });
+  });
 }
 
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
-
+// ---------------------
+// NAVIGATION
+// ---------------------
 function switchDay(i) {
   active = i;
   renderTabs();
   renderContent();
-  const saveBtn = document.getElementById("save-btn");
-  saveBtn.textContent = "Opslaan";
-  saveBtn.classList.remove("saved");
   window.scrollTo(0, 0);
 }
 
-function saveSession() {
-  const s = sessions[active];
-  if (s.type === "rust") return;
-  for (const ex of s.exercises) {
-    if (!ex.noweight) {
-      for (let i = 0; i < ex.sets; i++) {
-        const el = document.getElementById(`inp_${s.id}_${ex.id}_${i}`);
-        if (el) save(sk(s.id, ex.id, i), el.value);
-      }
-    }
-    const nel = document.getElementById(`note_${s.id}_${ex.id}`);
-    if (nel) save(nk(s.id, ex.id), nel.value);
-  }
-  const btn = document.getElementById("save-btn");
-  btn.textContent = "Opgeslagen ✓";
-  btn.classList.add("saved");
-  setTimeout(() => {
-    btn.textContent = "Opslaan";
-    btn.classList.remove("saved");
-  }, 2200);
+// ---------------------
+// BACKUP
+// ---------------------
+function exportData() {
+  const data = JSON.stringify(localStorage);
+  const blob = new Blob([data], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "workout-backup.json";
+  a.click();
 }
 
-function clearSession() {
-  if (!confirm("Gewichten van deze sessie wissen?")) return;
-  const s = sessions[active];
-  for (const ex of s.exercises) {
-    if (!ex.noweight) {
-      for (let i = 0; i < ex.sets; i++) {
-        const k = sk(s.id, ex.id, i);
-        try { localStorage.removeItem(k); } catch(e) {}
-        delete storage[k];
-        const el = document.getElementById(`inp_${s.id}_${ex.id}_${i}`);
-        if (el) el.value = "";
-      }
-    }
-    const nk2 = nk(s.id, ex.id);
-    try { localStorage.removeItem(nk2); } catch(e) {}
-    delete storage[nk2];
-    const nel = document.getElementById(`note_${s.id}_${ex.id}`);
-    if (nel) { nel.value = ""; autoResize(nel); }
-  }
-}
-
-// Init
-document.getElementById("week-label").textContent = getWeekLabel();
+// ---------------------
+// INIT
+// ---------------------
+updateWeekLabel();
 renderTabs();
 renderContent();
 
-// Auto-select today
+// auto today
 const dayMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
 const today = dayMap[new Date().getDay()];
-if (today !== undefined) { active = today; renderTabs(); renderContent(); }
+if (today !== undefined) {
+  active = today;
+  renderTabs();
+  renderContent();
+}
 </script>
 </body>
 </html>
