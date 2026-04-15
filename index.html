@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title>Training</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0ede8;
+    --muted: rgba(240,237,232,0.45);
+    --accent: #c8f06e;
+    --accent-dim: rgba(200,240,110,0.12);
+    --accent-text: #0f0f0f;
+    --push: #e8a87c;
+    --pull: #7cb8e8;
+    --legs: #b07ce8;
+    --cardio: #7ce8c0;
+    --full: #e8d87c;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --r: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+
+  /* Header */
+  .header {
+    padding: 52px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(15,15,15,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .app-title {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  .week-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  /* Day tabs */
+  .day-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .day-tabs::-webkit-scrollbar { display: none; }
+
+  .day-tab {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    font-family: var(--mono);
+    letter-spacing: 0.03em;
+  }
+
+  .day-tab.active {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  .day-tab.rest {
+    opacity: 0.4;
+  }
+
+  /* Content */
+  .content {
+    padding: 20px 16px 100px;
+  }
+
+  .session-header {
+    margin-bottom: 20px;
+  }
+
+  .session-name {
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .session-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .session-badge {
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .badge-push { background: rgba(232,168,124,0.15); color: var(--push); }
+  .badge-pull { background: rgba(124,184,232,0.15); color: var(--pull); }
+  .badge-benen { background: rgba(176,124,232,0.15); color: var(--legs); }
+  .badge-cardio { background: rgba(124,232,192,0.15); color: var(--cardio); }
+  .badge-full { background: rgba(232,216,124,0.15); color: var(--full); }
+  .badge-rust { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+  .session-time {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  /* Rest day */
+  .rest-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .rest-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  /* Exercise cards */
+  .ex-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .ex-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .ex-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .ex-scheme {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Set inputs */
+  .sets-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .set-block {
+    flex: 1;
+    min-width: 60px;
+    max-width: 90px;
+  }
+
+  .set-num {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .set-input-wrap {
+    position: relative;
+  }
+
+  .set-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 16px;
+    font-family: var(--mono);
+    font-weight: 500;
+    padding: 9px 28px 9px 10px;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .set-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(200,240,110,0.05);
+  }
+
+  .set-input::placeholder { color: rgba(240,237,232,0.2); }
+
+  .set-unit {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    pointer-events: none;
+  }
+
+  .no-weight-note {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--mono);
+    padding: 6px 0 2px;
+  }
+
+  /* Note */
+  .note-wrap {
+    margin-top: 10px;
+  }
+
+  .note-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 13px;
+    padding: 8px 0 2px;
+    resize: none;
+    line-height: 1.4;
+    min-height: 28px;
+  }
+
+  .note-input:focus {
+    outline: none;
+    color: var(--text);
+  }
+
+  .note-input::placeholder { color: rgba(240,237,232,0.18); }
+
+  /* Save bar */
+  .save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    background: rgba(15,15,15,0.97);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    z-index: 200;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .save-btn {
+    flex: 1;
+    padding: 13px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .save-btn:active { opacity: 0.75; }
+
+  .save-btn.saved {
+    background: var(--surface2);
+    color: var(--accent);
+    border: 1px solid rgba(200,240,110,0.3);
+  }
+
+  .clear-btn {
+    padding: 13px 16px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+
+  .clear-btn:active { opacity: 0.6; }
+
+  /* Tip */
+  .tip-card {
+    margin-top: 12px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(200,240,110,0.15);
+    border-radius: var(--r);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: rgba(200,240,110,0.85);
+    line-height: 1.5;
+  }
+
+  /* Divider label */
+  .section-divider {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 18px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="app-title">Training</span>
+    <span class="week-label" id="week-label">—</span>
+  </div>
+  <div class="day-tabs" id="day-tabs"></div>
+</div>
+
+<div class="content" id="content"></div>
+
+<div class="save-bar">
+  <button class="save-btn" id="save-btn" onclick="saveSession()">Opslaan</button>
+  <button class="clear-btn" onclick="clearSession()">Wis</button>
+</div>
+
+<script>
+const sessions = [
+  {
+    id: "ma", label: "Ma", type: "push", typeName: "Push",
+    name: "Push", time: "~40 min",
+    tip: "Borst, schouders, triceps. Zwaar genoeg dat de laatste 2 reps uitdagend zijn.",
+    exercises: [
+      { id: "chest_press", name: "Dumbbell chest press", sets: 4, reps: "10–12" },
+      { id: "ohp", name: "Overhead press", sets: 3, reps: "10" },
+      { id: "incline", name: "Incline dumbbell press", sets: 3, reps: "12" },
+      { id: "lateral", name: "Lateral raises", sets: 3, reps: "15" },
+      { id: "tricep", name: "Triceps kickbacks / overhead", sets: 3, reps: "12" },
+    ]
+  },
+  {
+    id: "di", label: "Di", type: "pull", typeName: "Pull",
+    name: "Pull", time: "~40 min",
+    tip: "Rug, biceps, achterste schouder. Focus op mind-muscle connection in de rug.",
+    exercises: [
+      { id: "bent_row", name: "Bent-over row", sets: 4, reps: "10" },
+      { id: "single_row", name: "Single-arm row", sets: 3, reps: "12 p.z." },
+      { id: "band_pull", name: "Band pull-apart", sets: 3, reps: "15", noweight: true },
+      { id: "curl", name: "Dumbbell curl", sets: 3, reps: "12" },
+      { id: "hammer", name: "Hammer curl", sets: 3, reps: "12" },
+    ]
+  },
+  {
+    id: "wo", label: "Wo", type: "rust", typeName: "Rust",
+    name: "Rust", time: "—",
+    tip: "Volledige rustdag. Goed eten en slapen voor herstel.",
+    exercises: []
+  },
+  {
+    id: "do", label: "Do", type: "cardio", typeName: "Cardio + core",
+    name: "Cardio + core", time: "~35 min",
+    tip: "Actieve rustdag tussen de krachtsessies. Licht zweten, niet uitputten.",
+    exercises: [
+      { id: "vr_box", name: "VR cardio boksen", sets: 1, reps: "20 min", noweight: true },
+      { id: "plank", name: "Plank (variaties)", sets: 3, reps: "45 sec", noweight: true },
+      { id: "deadbug", name: "Dead bug", sets: 3, reps: "10 p.z.", noweight: true },
+      { id: "woodchop", name: "Band woodchop", sets: 3, reps: "12 p.z." },
+    ]
+  },
+  {
+    id: "vr", label: "Vr", type: "benen", typeName: "Benen & billen",
+    name: "Benen & billen", time: "~45 min",
+    tip: "Zwaarste sessie. Goblet squat en RDL zijn je kernoefeningen — bouw gewicht op.",
+    exercises: [
+      { id: "goblet", name: "Goblet squat", sets: 4, reps: "12" },
+      { id: "rdl", name: "Romanian deadlift", sets: 4, reps: "10" },
+      { id: "lunge", name: "Dumbbell lunges", sets: 3, reps: "12 p.z." },
+      { id: "bridge", name: "Glute bridge / hip thrust", sets: 3, reps: "15", noweight: true },
+      { id: "crab", name: "Band crab walk", sets: 3, reps: "15 p.z.", noweight: true },
+    ]
+  },
+  {
+    id: "za", label: "Za", type: "full", typeName: "Full body",
+    name: "Full body", time: "~45 min",
+    tip: "Gebruik zaterdag om bodypump te integreren. Compound moves voor maximale efficiency.",
+    exercises: [
+      { id: "thruster", name: "Dumbbell thruster", sets: 4, reps: "10" },
+      { id: "renegade", name: "Renegade row", sets: 3, reps: "8 p.z." },
+      { id: "sumo", name: "Sumo deadlift", sets: 3, reps: "12" },
+      { id: "arnold", name: "Arnold press", sets: 3, reps: "10" },
+      { id: "bodypump", name: "Bodypump circuit", sets: 1, reps: "10 min", noweight: true },
+    ]
+  },
+  {
+    id: "zo", label: "Zo", type: "rust", typeName: "Rust",
+    name: "Rust", time: "—",
+    tip: "Volledige rustdag. Eventueel een wandeling of lichte stretch.",
+    exercises: []
+  }
+];
+
+let active = 0;
+const storage = {};
+
+function sk(sid, eid, i) { return `w_${sid}_${eid}_${i}`; }
+function nk(sid, eid) { return `note_${sid}_${eid}`; }
+
+function save(key, val) {
+  try { localStorage.setItem(key, val); } catch(e) {}
+  storage[key] = val;
+}
+
+function load(key) {
+  try { return localStorage.getItem(key) || storage[key] || ""; }
+  catch(e) { return storage[key] || ""; }
+}
+
+function getWeekLabel() {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `Week ${week}`;
+}
+
+function renderTabs() {
+  const container = document.getElementById("day-tabs");
+  container.innerHTML = sessions.map((s, i) => `
+    <div class="day-tab ${i === active ? 'active' : ''} ${s.type === 'rust' ? 'rest' : ''}"
+         onclick="switchDay(${i})">${s.label}</div>
+  `).join("");
+}
+
+function renderContent() {
+  const s = sessions[active];
+  const content = document.getElementById("content");
+
+  if (s.type === "rust") {
+    content.innerHTML = `
+      <div class="session-header">
+        <div class="session-name">${s.name}</div>
+        <div class="session-meta">
+          <span class="session-badge badge-rust">${s.typeName}</span>
+        </div>
+      </div>
+      <div class="rest-card">
+        <div class="rest-icon">○</div>
+        <div>${s.tip}</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div class="session-header">
+      <div class="session-name">${s.name}</div>
+      <div class="session-meta">
+        <span class="session-badge badge-${s.type}">${s.typeName}</span>
+        <span class="session-time">${s.time}</span>
+      </div>
+    </div>
+    <div class="section-divider">Straight sets — alle sets per oefening</div>
+  `;
+
+  for (const ex of s.exercises) {
+    html += `<div class="ex-card">`;
+    html += `<div class="ex-top">
+      <div class="ex-name">${ex.name}</div>
+      <div class="ex-scheme">${ex.sets}×${ex.reps}</div>
+    </div>`;
+
+    if (ex.noweight) {
+      html += `<div class="no-weight-note">— geen gewicht</div>`;
+    } else {
+      html += `<div class="sets-row">`;
+      for (let i = 0; i < ex.sets; i++) {
+        const val = load(sk(s.id, ex.id, i));
+        html += `
+          <div class="set-block">
+            <div class="set-num">Set ${i + 1}</div>
+            <div class="set-input-wrap">
+              <input class="set-input" type="number" inputmode="decimal" min="0" step="0.5"
+                     placeholder="—" value="${val}"
+                     id="inp_${s.id}_${ex.id}_${i}" />
+              <span class="set-unit">kg</span>
+            </div>
+          </div>`;
+      }
+      html += `</div>`;
+    }
+
+    const noteVal = load(nk(s.id, ex.id));
+    html += `<div class="note-wrap">
+      <textarea class="note-input" rows="1" placeholder="Notitie..."
+                id="note_${s.id}_${ex.id}"
+                oninput="autoResize(this)">${noteVal}</textarea>
+    </div>`;
+    html += `</div>`;
+  }
+
+  html += `<div class="tip-card">${s.tip}</div>`;
+  content.innerHTML = html;
+
+  // Auto-resize textareas
+  document.querySelectorAll('.note-input').forEach(autoResize);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function switchDay(i) {
+  active = i;
+  renderTabs();
+  renderContent();
+  const saveBtn = document.getElementById("save-btn");
+  saveBtn.textContent = "Opslaan";
+  saveBtn.classList.remove("saved");
+  window.scrollTo(0, 0);
+}
+
+function saveSession() {
+  const s = sessions[active];
+  if (s.type === "rust") return;
+  for (const ex of s.exercises) {
+    if (!ex.noweight) {
+      for (let i = 0; i < ex.sets; i++) {
+        const el = document.getElementById(`inp_${s.id}_${ex.id}_${i}`);
+        if (el) save(sk(s.id, ex.id, i), el.value);
+      }
+    }
+    const nel = document.getElementById(`note_${s.id}_${ex.id}`);
+    if (nel) save(nk(s.id, ex.id), nel.value);
+  }
+  const btn = document.getElementById("save-btn");
+  btn.textContent = "Opgeslagen ✓";
+  btn.classList.add("saved");
+  setTimeout(() => {
+    btn.textContent = "Opslaan";
+    btn.classList.remove("saved");
+  }, 2200);
+}
+
+function clearSession() {
+  if (!confirm("Gewichten van deze sessie wissen?")) return;
+  const s = sessions[active];
+  for (const ex of s.exercises) {
+    if (!ex.noweight) {
+      for (let i = 0; i < ex.sets; i++) {
+        const k = sk(s.id, ex.id, i);
+        try { localStorage.removeItem(k); } catch(e) {}
+        delete storage[k];
+        const el = document.getElementById(`inp_${s.id}_${ex.id}_${i}`);
+        if (el) el.value = "";
+      }
+    }
+    const nk2 = nk(s.id, ex.id);
+    try { localStorage.removeItem(nk2); } catch(e) {}
+    delete storage[nk2];
+    const nel = document.getElementById(`note_${s.id}_${ex.id}`);
+    if (nel) { nel.value = ""; autoResize(nel); }
+  }
+}
+
+// Init
+document.getElementById("week-label").textContent = getWeekLabel();
+renderTabs();
+renderContent();
+
+// Auto-select today
+const dayMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
+const today = dayMap[new Date().getDay()];
+if (today !== undefined) { active = today; renderTabs(); renderContent(); }
+</script>
+</body>
+</html>
